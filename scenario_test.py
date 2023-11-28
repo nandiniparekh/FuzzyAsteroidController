@@ -28,10 +28,19 @@ game = KesslerGame(settings=game_settings)  # Use this to visualize the game sce
 
 # Evaluate the game
 pre = time.perf_counter()
-controllers = [ScottDickController(), ScottDickController()]
+controllers = []
 
-if (sys.argv[1].lower() == "ybn"):
-    controllers = [YbnController(), YbnController()]
+controller_args = sys.argv[1:]
+if len(controller_args) > 0:
+    for c_arg in controller_args:
+        if (c_arg.lower() == "ybn"):
+            controllers.append(YbnController())
+        elif (c_arg.lower() == "scott"):
+            controllers.append(ScottDickController())
+        else:
+            print(f"Skipping unknown controller {c_arg}")
+else:
+    controllers = [ScottDickController()]
 
 score, perf_data = game.run(scenario=my_test_scenario, controllers=controllers)
 
