@@ -74,10 +74,10 @@ class ScottDickController(KesslerController):
         rule15 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['Y']))
 
         #DEBUG
-        #bullet_time.view()
-        #theta_delta.view()
-        #ship_turn.view()
-        #ship_fire.view()
+        # bullet_time.view()
+        # theta_delta.view()
+        # ship_turn.view()
+        # ship_fire.view()
 
 
 
