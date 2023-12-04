@@ -21,11 +21,12 @@ class YbnController(KesslerController):
         # Declare variables
         bullet_time = ctrl.Antecedent(np.arange(0,1.0,0.002), 'bullet_time')
         theta_delta = ctrl.Antecedent(np.arange(-1*math.pi,math.pi,0.1), 'theta_delta') # Radians due to Python
+        hit_dist = ctrl.Antecedent(np.arange(0,800,10), 'hit_dist')   # time that ship will likely be hit
+
         ship_turn = ctrl.Consequent(np.arange(-180,180,1), 'ship_turn') # Degrees due to Kessler
         ship_fire = ctrl.Consequent(np.arange(-1,1,0.1), 'ship_fire')
 
-        ship_run = ctrl.Consequent(np.arange(-150,0,10), 'ship_run')  # ship thrust to run 
-        hit_time = ctrl.Consequent(np.arange(0,20,0.5), 'hit_time')   # time that ship will likely be hit
+        ship_run = ctrl.Consequent(np.arange(-150,150,10), 'ship_run')  # ship thrust to run 
 
 
         #Declare fuzzy sets for bullet_time (how long it takes for the bullet to reach the intercept point)
@@ -53,61 +54,48 @@ class YbnController(KesslerController):
         ship_fire['Y'] = fuzz.trimf(ship_fire.universe, [0.0,1,1])
 
         #Declare fuzzy sets for the ship_run consequent; this will be returned as thrust.
-        ship_run['S']  = fuzz.trimf(ship_run.universe, [-150,0,0])
-        ship_run['M']  = fuzz.trimf(ship_run.universe, [-150,-75,0])
-        ship_run['L'] = fuzz.trimf(ship_run.universe, [-150,-150,0])
+        ship_run['NL']  = fuzz.trimf(ship_run.universe, [-150,-150,-30])
+        ship_run['NS']  = fuzz.trimf(ship_run.universe, [-90,-30,0])
+        ship_run['M']  = fuzz.trimf(ship_run.universe, [-30,0,30])
+        ship_run['PS']  = fuzz.trimf(ship_run.universe, [0,30,90])
+        ship_run['PL'] = fuzz.trimf(ship_run.universe, [0,150,150])
 
-        # hit_time['S']  = fuzz.trimf(hit_time.universe, [0,0,20])
-        # hit_time['M']  = fuzz.trimf(hit_time.universe, [0,10,20])
-        # hit_time['L'] = fuzz.trimf(hit_time.universe, [0,20,20])
+        hit_dist['NL']  = fuzz.trimf(hit_dist.universe, [0,0,200])
+        hit_dist['NS']  = fuzz.trimf(hit_dist.universe, [100,300,600])
+        hit_dist['M']  = fuzz.trimf(hit_dist.universe, [200,400,600])
+        hit_dist['PS']  = fuzz.trimf(hit_dist.universe, [200,600,800])
+        hit_dist['PL'] = fuzz.trimf(hit_dist.universe, [400,800,800])
 
 
-        #Declare each fuzzy rule
-        rule1 = ctrl.Rule(bullet_time['L'] & theta_delta['NL'] , (ship_turn['NL'], ship_run['S'], ship_fire['N']))
-        rule2 = ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_run['S'],ship_fire['Y']))
-        rule3 = ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_run['S'], ship_fire['Y']))
-        rule4 = ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_run['S'], ship_fire['Y']))
-        rule5 = ctrl.Rule(bullet_time['L'] & theta_delta['PL'], (ship_turn['PL'], ship_run['S'],ship_fire['N']))
-        rule6 = ctrl.Rule(bullet_time['M'] & theta_delta['NL'], (ship_turn['NL'], ship_run['M'], ship_fire['N']))
-        rule7 = ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NS'], ship_run['M'], ship_fire['Y'] ))
-        rule8 = ctrl.Rule(bullet_time['M'] & theta_delta['Z'], (ship_turn['Z'], ship_run['M'],ship_fire['Y']))
-        rule9 = ctrl.Rule(bullet_time['M'] & theta_delta['PS'], (ship_turn['PS'],ship_run['M'] ,ship_fire['Y']))
-        rule10 = ctrl.Rule(bullet_time['M'] & theta_delta['PL'], (ship_turn['PL'],ship_run['M'] ,ship_fire['N']))
-        rule11 = ctrl.Rule(bullet_time['S'] & theta_delta['NL'], (ship_turn['NL'],ship_run['L'] ,ship_fire['Y']))
-        rule12 = ctrl.Rule(bullet_time['S'] & theta_delta['NS'], (ship_turn['NS'],ship_run['L'] ,ship_fire['Y']))
-        rule13 = ctrl.Rule(bullet_time['S'] & theta_delta['Z'], (ship_turn['Z'],ship_run['L'], ship_fire['Y']))
-        rule14 = ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_turn['PS'],ship_run['L'] ,ship_fire['Y']))
-        rule15 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_run['L'],ship_fire['Y']))
+        rule1 = ctrl.Rule(bullet_time['L'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
+        rule2 = ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
+        rule3 = ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
+        rule4 = ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
+        rule5 = ctrl.Rule(bullet_time['L'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))
+        rule6 = ctrl.Rule(bullet_time['M'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
+        rule7 = ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
+        rule8 = ctrl.Rule(bullet_time['M'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
+        rule9 = ctrl.Rule(bullet_time['M'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
+        rule10 = ctrl.Rule(bullet_time['M'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))
+        rule11 = ctrl.Rule(bullet_time['S'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['Y']))
+        rule12 = ctrl.Rule(bullet_time['S'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
+        rule13 = ctrl.Rule(bullet_time['S'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
+        rule14 = ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
+        rule15 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['Y']))
 
-      
-        #         #Declare each fuzzy rule
-        # rule1 = ctrl.Rule(bullet_time['L'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
-        # rule2 = ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
-        # rule3 = ctrl.Rule(bullet_time['L'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
-        # rule4 = ctrl.Rule(bullet_time['L'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
-        # rule5 = ctrl.Rule(bullet_time['L'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))
-        # rule6 = ctrl.Rule(bullet_time['M'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
-        # rule7 = ctrl.Rule(bullet_time['M'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
-        # rule8 = ctrl.Rule(bullet_time['M'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
-        # rule9 = ctrl.Rule(bullet_time['M'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
-        # rule10 = ctrl.Rule(bullet_time['M'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['N']))
-        # rule11 = ctrl.Rule(bullet_time['S'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['Y']))
-        # rule12 = ctrl.Rule(bullet_time['S'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
-        # rule13 = ctrl.Rule(bullet_time['S'] & theta_delta['Z'], (ship_turn['Z'], ship_fire['Y']))
-        # rule14 = ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
-        # rule15 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['Y']))
+        rule16 = ctrl.Rule(hit_dist['NL'], (ship_run['NL']))
+        rule17 = ctrl.Rule(hit_dist['NS'], (ship_run['NS']))
+        rule18 = ctrl.Rule(hit_dist['M'], (ship_run['M']))
+        rule19 = ctrl.Rule(hit_dist['PS'], (ship_run['PS']))
+        rule20 = ctrl.Rule(hit_dist['PL'], (ship_run['PL']))
 
-        # need modification here
-        # rule16 = ctrl.Rule(hit_time['S'], (ship_run['L'],ship_fire['Y']))
-        # rule17 = ctrl.Rule(hit_time['M'], (ship_turn['PS'],ship_fire['Y']))
-        # rule18 = ctrl.Rule(hit_time['L'], (ship_turn['PL'],ship_fire['N']))
 
         #DEBUG
         #bullet_time.view()
         #theta_delta.view()
         #ship_turn.view()
-        #ship_fire.view()
-
+        # ship_fire.view()
+        # hit_time.view()
 
 
         # Declare the fuzzy controller, add the rules
@@ -130,10 +118,12 @@ class YbnController(KesslerController):
         self.targeting_control.addrule(rule13)
         self.targeting_control.addrule(rule14)
         self.targeting_control.addrule(rule15)
-        
-        # self.targeting_control.addrule(rule16)
-        # self.targeting_control.addrule(rule17)
-        # self.targeting_control.addrule(rule18)
+        self.targeting_control.addrule(rule16)
+        self.targeting_control.addrule(rule17)
+        self.targeting_control.addrule(rule18)
+        self.targeting_control.addrule(rule19)
+        self.targeting_control.addrule(rule20)
+
         
 
 
@@ -152,28 +142,23 @@ class YbnController(KesslerController):
             bool: mine deployment control value. Lays mine if true
         """
         # Get position of the ship 
-        ship_pos_x = ship_state["position"][0]     
+        ship_pos_x = ship_state["position"][0]     # See src/kesslergame/ship.py in the KesslerGame Github
         ship_pos_y = ship_state["position"][1]
-        closest_asteroid = None # shoot toward the closest 
-        furthes_asteroid = None # move toward the furthest.
+        closest_asteroid = None
 
         for a in game_state["asteroids"]:
-            #Loop through all asteroids, find minimum Eudlidean and largest distance
+            #Loop through all asteroids, find minimum Eudlidean distance
             curr_dist = math.sqrt((ship_pos_x - a["position"][0])**2 + (ship_pos_y - a["position"][1])**2)
-            if (closest_asteroid is None ) | (furthes_asteroid is None ) :
+            if closest_asteroid is None :
                 # Does not yet exist, so initialize first asteroid as the minimum. Ugh, how to do?
                 closest_asteroid = dict(aster = a, dist = curr_dist)
-                furthes_asteroid = dict(aster = a, dist = curr_dist)
+
             else:
-                # closest_asteroid and furthest_asteroid exists, and is thus initialized.
+                # closest_asteroid exists, and is thus initialized.
                 if closest_asteroid["dist"] > curr_dist:
                     # New minimum found
                     closest_asteroid["aster"] = a
                     closest_asteroid["dist"] = curr_dist
-                if furthes_asteroid["dist"] < curr_dist:
-                    # New maximum found
-                    closest_asteroid["aster"] = a
-                    closest_asteroid["dist"] = curr_dist 
 
 
         asteroid_ship_x = ship_pos_x - closest_asteroid["aster"]["position"][0]
@@ -219,18 +204,19 @@ class YbnController(KesslerController):
         # Wrap all angles to (-pi, pi)
         shooting_theta = (shooting_theta + math.pi) % (2 * math.pi) - math.pi
 
-        ship_speed = math.sqrt(((ship_state["velocity"][0]))**2 + ((ship_state["velocity"][1]))**2)
-        if ship_speed != 0:
-            hit_time = curr_dist / ship_speed
-        else:
-            hit_time = 20  # maximum time
-            
+        # ship_speed = math.sqrt(((ship_state["velocity"][0]))**2 + ((ship_state["velocity"][1]))**2)
+        # if ship_speed != 0:
+        #     hit_time = abs( closest_asteroid["dist"] / ship_speed)
+        # else:
+        #     hit_time = 200  # maximum time
+
+
         # Pass the inputs to the rulebase and fire it
         shooting = ctrl.ControlSystemSimulation(self.targeting_control,flush_after_run=1)
 
         shooting.input['bullet_time'] = bullet_t
         shooting.input['theta_delta'] = shooting_theta
-        # shooting.input['hit_time'] = hit_time
+        shooting.input['hit_dist'] = closest_asteroid["dist"]
 
         shooting.compute()
 
@@ -245,9 +231,9 @@ class YbnController(KesslerController):
         # print(shooting.output['ship_run'])
         # And return your three outputs to the game simulation. Controller algorithm complete.
         thrust = shooting.output['ship_run']
-        print(thrust)
-
-   
+        print(f"thrust is {thrust}")
+        dis = closest_asteroid["dist"]
+        print(f"minimum hit distance is {dis}")
         drop_mine = False
 
 
