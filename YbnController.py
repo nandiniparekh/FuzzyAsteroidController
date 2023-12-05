@@ -9,6 +9,9 @@ import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 import math
 import numpy as np
+from EasyGA import GA
+import random
+from kesslergame import Scenario, KesslerGame, GraphicsType
 
 
 class YbnController(KesslerController):
@@ -22,12 +25,13 @@ class YbnController(KesslerController):
         bullet_time = ctrl.Antecedent(np.arange(0,1.0,0.002), 'bullet_time')
         theta_delta = ctrl.Antecedent(np.arange(-1*math.pi,math.pi,0.1), 'theta_delta') # Radians due to Python
         hit_dist = ctrl.Antecedent(np.arange(0,800,10), 'hit_dist')   # time that ship will likely be hit
+        ast_size = ctrl.Antecedent(np.arange(0,5,0.01), 'ast_size')
 
         ship_turn = ctrl.Consequent(np.arange(-180,180,1), 'ship_turn') # Degrees due to Kessler
         ship_fire = ctrl.Consequent(np.arange(-1,1,0.1), 'ship_fire')
 
         ship_run = ctrl.Consequent(np.arange(-150,150,10), 'ship_run')  # ship thrust to run 
-
+        
 
         #Declare fuzzy sets for bullet_time (how long it takes for the bullet to reach the intercept point)
         bullet_time['S'] = fuzz.trimf(bullet_time.universe,[0,0,0.05])
@@ -55,10 +59,22 @@ class YbnController(KesslerController):
 
         #Declare fuzzy sets for the ship_run consequent; this will be returned as thrust.
         ship_run['NL']  = fuzz.trimf(ship_run.universe, [-150,-150,-30])
-        ship_run['NS']  = fuzz.trimf(ship_run.universe, [-90,-30,0])
-        ship_run['M']  = fuzz.trimf(ship_run.universe, [-30,0,30])
-        ship_run['PS']  = fuzz.trimf(ship_run.universe, [0,30,90])
+        ship_run['NS']  = fuzz.trimf(ship_run.universe, [-150,-80,0])
+        ship_run['M']  = fuzz.trimf(ship_run.universe, [-50,0,50])
+        ship_run['PS']  = fuzz.trimf(ship_run.universe, [0,50,90])
         ship_run['PL'] = fuzz.trimf(ship_run.universe, [0,150,150])
+        
+        
+        # training over these values
+        # ship_run['NL']  = fuzz.trimf(ship_run.universe, [-150,-150,chromosome[0].value])
+        # ship_run['NS']  = fuzz.trimf(ship_run.universe, [chromosome[1].value,chromosome[2].value,0])
+        # ship_run['M']  = fuzz.trimf(ship_run.universe, [-chromosome[3].value,0,chromosome[3].value])
+        # ship_run['PS']  = fuzz.trimf(ship_run.universe, [0,chromosome[4].value,chromosome[5].value])
+        # ship_run['PL'] = fuzz.trimf(ship_run.universe, [chromosome[6].value,150,150])
+        
+        
+        
+        
 
         hit_dist['NL']  = fuzz.trimf(hit_dist.universe, [0,0,200])
         hit_dist['NS']  = fuzz.trimf(hit_dist.universe, [100,300,600])
@@ -66,6 +82,8 @@ class YbnController(KesslerController):
         hit_dist['PS']  = fuzz.trimf(hit_dist.universe, [200,600,800])
         hit_dist['PL'] = fuzz.trimf(hit_dist.universe, [400,800,800])
 
+        ast_size['S'] = fuzz.trimf(ast_size.universe,[0,1,2])
+        ast_size['L'] = fuzz.trimf(ast_size.universe,[1,4,4])
 
         rule1 = ctrl.Rule(bullet_time['L'] & theta_delta['NL'], (ship_turn['NL'], ship_fire['N']))
         rule2 = ctrl.Rule(bullet_time['L'] & theta_delta['NS'], (ship_turn['NS'], ship_fire['Y']))
@@ -83,12 +101,17 @@ class YbnController(KesslerController):
         rule14 = ctrl.Rule(bullet_time['S'] & theta_delta['PS'], (ship_turn['PS'], ship_fire['Y']))
         rule15 = ctrl.Rule(bullet_time['S'] & theta_delta['PL'], (ship_turn['PL'], ship_fire['Y']))
 
-        rule16 = ctrl.Rule(hit_dist['NL'], (ship_run['NL']))
-        rule17 = ctrl.Rule(hit_dist['NS'], (ship_run['NS']))
-        rule18 = ctrl.Rule(hit_dist['M'], (ship_run['M']))
-        rule19 = ctrl.Rule(hit_dist['PS'], (ship_run['PS']))
-        rule20 = ctrl.Rule(hit_dist['PL'], (ship_run['PL']))
-
+        rule16 = ctrl.Rule(hit_dist['NL'] & ast_size['S'] , (ship_run['NS']))
+        rule17 = ctrl.Rule(hit_dist['NS'] & ast_size['S'], (ship_run['NS']))
+        rule18 = ctrl.Rule(hit_dist['M'] & ast_size['S'], (ship_run['M']))
+        rule19 = ctrl.Rule(hit_dist['PS'] & ast_size['S'], (ship_run['PS']))
+        rule20 = ctrl.Rule(hit_dist['PL'] & ast_size['S'], (ship_run['PL']))
+        
+        rule21 = ctrl.Rule(hit_dist['NL'] & ast_size['L'], (ship_run['NL']))
+        rule22 = ctrl.Rule(hit_dist['NS'] & ast_size['L'], (ship_run['NS']))
+        rule23 = ctrl.Rule(hit_dist['M'] & ast_size['L'], (ship_run['M']))
+        rule24 = ctrl.Rule(hit_dist['PS'] & ast_size['L'], (ship_run['PS']))
+        rule25 = ctrl.Rule(hit_dist['PL'] & ast_size['L'], (ship_run['PL']))
 
         #DEBUG
         #bullet_time.view()
@@ -123,6 +146,11 @@ class YbnController(KesslerController):
         self.targeting_control.addrule(rule18)
         self.targeting_control.addrule(rule19)
         self.targeting_control.addrule(rule20)
+        self.targeting_control.addrule(rule21)
+        self.targeting_control.addrule(rule22)
+        self.targeting_control.addrule(rule23)
+        self.targeting_control.addrule(rule24)
+        self.targeting_control.addrule(rule25)
 
         
 
@@ -217,6 +245,7 @@ class YbnController(KesslerController):
         shooting.input['bullet_time'] = bullet_t
         shooting.input['theta_delta'] = shooting_theta
         shooting.input['hit_dist'] = closest_asteroid["dist"]
+        shooting.input['ast_size'] = closest_asteroid["aster"]["size"]
 
         shooting.compute()
 
@@ -231,15 +260,62 @@ class YbnController(KesslerController):
         # print(shooting.output['ship_run'])
         # And return your three outputs to the game simulation. Controller algorithm complete.
         thrust = shooting.output['ship_run']
-        print(f"thrust is {thrust}")
         dis = closest_asteroid["dist"]
-        print(f"minimum hit distance is {dis}")
         drop_mine = False
 
 
         self.eval_frames +=1   # do increment for each frame, since we should call action at every each frame of the game.
         return thrust, turn_rate, fire, drop_mine
 
+  
+    
     @property
     def name(self) -> str:
         return "YBN Controller"
+
+    def generate_chromosome():
+        return random.randint(-150, 150)
+
+    def fitness():
+    # This is the fitness function that will be used to evolve the models
+        total_asteroids_hit = 0
+        round = 10
+        my_test_scenario = Scenario(name='Test Scenario',
+                            num_asteroids=10,
+                            ship_states=[
+                                {'position': (400, 400), 'angle': 90, 'lives': 3, 'team': 1, "mines_remaining": 3},],
+                            map_size=(1000, 800),
+                            time_limit=60,
+                            ammo_limit_multiplier=0,
+                            stop_if_no_ammo=False)
+
+        # Define Game Settings
+        game_settings = {'perf_tracker': True,
+                    'graphics_type': GraphicsType.Tkinter,
+                    'realtime_multiplier': 1,
+                    'graphics_obj': None,
+                    'frequency': 30}
+        game = KesslerGame(settings=game_settings)
+        for i in round:
+            score = game.run(scenario= my_test_scenario, controllers= [YbnController()])  # Use this to visualize the game scenario)
+            asteroid_hit = score.team[0].asteroids_hit
+            total_asteroids_hit += asteroid_hit
+        avg_score = total_asteroids_hit/10
+        return avg_score
+        # pass
+
+    def main():
+        # ga = GA()
+        # ga.gene_impl = lambda: YbnController().generate_chromosome()
+        # ga.chromosome_length = 6
+        # ga.population_size = 10
+        # ga.target_fitness_type = 'max'
+        # ga.generation_goal = 5
+        # ga.fitness_function_impl = YbnController().fitness  
+        # ga.evolve() 
+        return 0
+        
+
+if __name__ == '__main__':
+    crtl = YbnController()
+    crtl.main()
