@@ -36,7 +36,6 @@ class YbnController(KesslerController):
         min = universe[0]
         max = universe[-1]
         
-        gene.sort()
         # map random normalized value to the range of the universe
         m2 = max * gene[0]
         m1 = max * gene[1]
@@ -296,7 +295,7 @@ def generate_gene():
     for _ in range(5):
         result.append(random.random())
     
-    return result
+    return result.sort()
 
 
 def fitness(chromosome, train = True):
@@ -325,9 +324,9 @@ def fitness(chromosome, train = True):
 
     # calculate scores
     scores = []
-    for _ in range(100):
+    for _ in range(10):
         score, perf_data = game.run(scenario= my_test_scenario, controllers= [YbnController(chromosome)])  # Use this to visualize the game scenario)
-        
+
         accuracy = 0
         asteroids_hit = 0
         for team in score.teams:
@@ -350,7 +349,7 @@ def main():
         ga.chromosome_length = 3
         ga.population_size = 200
         ga.target_fitness_type = 'max'
-        ga.generation_goal = 100
+        ga.generation_goal = 20
         ga.fitness_function_impl = fitness  
         ga.evolve() 
         ga.print_best_chromosome()
