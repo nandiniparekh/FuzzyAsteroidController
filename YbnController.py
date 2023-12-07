@@ -295,7 +295,8 @@ def generate_gene():
     for _ in range(5):
         result.append(random.random())
     
-    return result.sort()
+    result.sort()
+    return result
 
 
 def fitness(chromosome, train = True):
