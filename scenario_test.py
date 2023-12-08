@@ -1,7 +1,7 @@
 import time
 from kesslergame import Scenario, KesslerGame, GraphicsType
 from ControllerCodeFromDrDick import ScottDickController
-from YbnController import YbnController
+from ybn_controller import YbnController
 # from graphics_both import GraphicsBoth
 import sys
 
