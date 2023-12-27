@@ -1,9 +1,3 @@
-# ECE 449 Intelligent Systems Engineering
-# Fall 2023
-# Yuyang Zeng
-# Benaka Achar
-# Nandini Parekh
-
 from typing import Dict, Tuple
 from cmath import sqrt
 import skfuzzy as fuzz
